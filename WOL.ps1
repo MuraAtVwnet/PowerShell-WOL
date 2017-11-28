@@ -77,7 +77,12 @@ function ConvertMacAddressString2ByteData( [string] $MacAddressString ){
 	$ReturnData = New-Object byte[] $C_MacAddressSize
 
 	for( $i=0; $i -lt $C_MacAddressSize; $i++){
-		$ReturnData[$i] = [System.Convert]::ToByte($MacDatas[$i], 16)
+		try{
+			$ReturnData[$i] = [System.Convert]::ToByte($MacDatas[$i], 16)
+		}
+		catch{
+			return $null
+		}
 	}
 
 	return $ReturnData
@@ -269,7 +274,13 @@ if( -not $NoLog ){
 # MAC アドレス文字列を byte データにする
 $MacAddressByte = ConvertMacAddressString2ByteData $MacAddress
 if( $MacAddressByte -eq $null ){
-	echo "[FAIL] Bad MAC Address format"
+	$Message = "[FAIL] Bad MAC Address. $MacAddress"
+	if( -not $NoLog ){
+		Log $Message
+	}
+	else{
+		echo $Message
+	}
 	exit
 }
 
