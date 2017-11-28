@@ -7,7 +7,7 @@ Usage...
 
     Options:
         -MacAddress
-            Terget MAC Address( `"-`" or `":`" )
+            Terget MAC Address( "-" or ":" )
 
         -NetworkAddress
             Terget Network/CIDR
