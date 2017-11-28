@@ -92,7 +92,7 @@ function ConvertMacAddressString2ByteData( [string] $MacAddressString ){
 # マジックパケットデータを作成する
 ########################################################
 function CreateMagicPacketData( $MacAddressByte ){
-	$ReturnData = New-Object byte[] 102
+	$ReturnData = New-Object byte[] $C_MagicPacketSize
 
 	# 先頭の 6 バイトの 0xff
 	for($i=0; $i -lt $C_MacAddressSize; $i++){
