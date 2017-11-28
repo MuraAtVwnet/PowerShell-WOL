@@ -16,7 +16,7 @@ $C_MagicPacketSize = 102
 # ログの出力先
 $LogPath = Split-Path $MyInvocation.MyCommand.Path -Parent
 # ログファイル名
-$LogName = "Send_WOL"
+$LogName = "PowerSehll_WOL"
 #########################################################################
 # ログ出力
 ##########################################################################
@@ -227,7 +227,7 @@ function SendPacket( $BroadcastAddress, $ByteData, $Port ){
 function Usage(){
 	echo ""
 	echo "Usage..."
-	echo "    SendWOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address"
+	echo "    WOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address"
 	echo ""
 	echo "    Options:"
 	echo "        -MacAddress"
@@ -246,8 +246,9 @@ function Usage(){
 	echo "            Log not output"
 	echo ""
 	echo "    e.g."
-	echo "        SendWOL.ps1 02-15-90-CA-0F-2A 192.168.0.15/24"
-	echo "        SendWOL.ps1 02-15-90-CA-0F-2A 192.168.0.15 255.255.255.0"
+	echo "        WOL.ps1 02-15-90-CA-0F-2A 192.168.0.15/24"
+	echo "        WOL.ps1 02-15-90-CA-0F-2A 192.168.0.15 255.255.255.0"
+	echo "        WOL.ps1 -NetworkAddress 192.168.0.15/24 -MacAddress 02-15-90-CA-0F-2A -NoLog"
 	echo ""
 }
 
@@ -293,7 +294,7 @@ if( $Status -eq $false ){
 }
 
 if( -not $NoLog ){
-	Log "[INFO] Sended WOL Packet."
+	Log "[INFO] Sended Magic Packet."
 	Log "[INFO]     Broadcast Address  : $BroadcastAddress"
 	Log "[INFO]     UDP port number    : $Port"
 	Log "[INFO]     Terget MAC Address : $MacAddress"

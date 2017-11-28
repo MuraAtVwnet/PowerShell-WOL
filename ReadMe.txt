@@ -3,7 +3,7 @@
 Send Magic Packet
 
 Usage...
-    .\SendWOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address
+    .\WOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address
 
     Options:
         -MacAddress
@@ -22,5 +22,6 @@ Usage...
             Log not output
 
     e.g.
-        .\SendWOL.ps1 02-15-90-CA-0F-2A 192.168.0.15/24
-        .\SendWOL.ps1 02-15-90-CA-0F-2A 192.168.0.15 255.255.255.0
+        .\WOL.ps1 02-15-90-CA-0F-2A 192.168.0.15/24
+        .\WOL.ps1 02-15-90-CA-0F-2A 192.168.0.15 255.255.255.0
+        .\WOL.ps1 -NetworkAddress 192.168.0.15/24 -MacAddress 02-15-90-CA-0F-2A -NoLog
