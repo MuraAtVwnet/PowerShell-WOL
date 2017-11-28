@@ -2,13 +2,57 @@
 # マジックパケット送信
 ########################################################
 param(
-	$NetworkAddress,	# Network Address(CIDR)
-	$MacAddress			# Terget MAC Address( "-" or ":" or space)
+	$MacAddress,		# マジックパケットの送り先( - or : or space セパレート)
+	$NetworkAddress,	# ネットワークアドレス(CIDR形式)
+	$SubnetMask,		# サブネットマスク
+	$Port = 7,			# UDP のポート番号
+	[switch]$NoLog		# ログ出力
 	)
 
+# 定数
 $C_MacAddressSize = 6
 $C_MagicPacketSize = 102
 
+# ログの出力先
+$LogPath = Split-Path $MyInvocation.MyCommand.Path -Parent
+# ログファイル名
+$LogName = "Send_WOL"
+#########################################################################
+# ログ出力
+##########################################################################
+function Log(
+			$LogString
+			){
+
+
+	$Now = Get-Date
+
+	# Log 出力文字列に時刻を付加(YYYY/MM/DD HH:MM:SS.MMM $LogString)
+	$Log = $Now.ToString("yyyy/MM/dd HH:mm:ss.fff") + " "
+	$Log += $LogString
+
+	# ログファイル名が設定されていなかったらデフォルトのログファイル名をつける
+	if( $LogName -eq $null ){
+		$LogName = "LOG"
+	}
+
+	# ログファイル名(XXXX_YYYY-MM-DD.log)
+	$LogFile = $LogName + "_" +$Now.ToString("yyyy-MM-dd") + ".log"
+
+	# ログフォルダーがなかったら作成
+	if( -not (Test-Path $LogPath) ) {
+		New-Item $LogPath -Type Directory
+	}
+
+	# ログファイル名
+	$LogFileName = Join-Path $LogPath $LogFile
+
+	# ログ出力
+	Write-Output $Log | Out-File -FilePath $LogFileName -Encoding Default -append
+
+	# echo させるために出力したログを戻す
+	Return $Log
+}
 ########################################################
 # MAC アドレス文字列を byte データにする
 ########################################################
@@ -156,25 +200,69 @@ function SendPacket( $BroadcastAddress, $ByteData, $Port ){
 	# アセンブリがロード
 	Add-Type -AssemblyName System.Net
 
-	# UDP ソケット作る
-	$UDPSocket = New-Object System.Net.Sockets.UdpClient($BroadcastAddress, $Port)
+	try{
+		# UDP ソケット作る
+		$UDPSocket = New-Object System.Net.Sockets.UdpClient($BroadcastAddress, $Port)
 
-	if( $UDPSocket -ne $null ){
+		if( $UDPSocket -eq $null ){
+			return $false
+		}
+
 		# 送信
 		[void]$UDPSocket.Send($ByteData, $ByteData.Length)
 
 		# ソケット Close
 		$UDPSocket.Close()
 	}
+	catch{
+		return $false
+	}
+
+	return $true
 }
+
+########################################################
+# Usage
+########################################################
+function Usage(){
+	echo ""
+	echo "Usage..."
+	echo "    SendWOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address"
+	echo ""
+	echo "    Options:"
+	echo "        -MacAddress"
+	echo "            Terget MAC Address( `"-`" or `":`" )"
+	echo ""
+	echo "        -NetworkAddress"
+	echo "            Terget Network/CIDR"
+	echo ""
+	echo "        -SubnetMask"
+	echo "            Subnet Mask"
+	echo ""
+	echo "        -Port"
+	echo "            Terget UDP port number(default 7)"
+	echo ""
+	echo "        -NoLog"
+	echo "            Log not output"
+	echo ""
+	echo "    e.g."
+	echo "        SendWOL.ps1 02-15-90-CA-0F-2A 192.168.0.15/24"
+	echo "        SendWOL.ps1 02-15-90-CA-0F-2A 192.168.0.15 255.255.255.0"
+	echo ""
+}
+
 
 ########################################################
 # main
 ########################################################
-if( $NetworkAddress -eq $null ){
-	echo "Usage..."
-	echo "    SendMagicPacket.ps1 NetworkAddress(CIDR) TergetMacAddress( "-" or ":" or space)"
+if( ($NetworkAddress -eq $null) -or ($MacAddress -eq $null) ){
+	Usage
 	exit
+}
+
+if( -not $NoLog ){
+	# ログ表示抑制しつつログ記録
+	$Dummy = Log "[INFO] ========= Start ========="
 }
 
 # MAC アドレス文字列を byte データにする
@@ -188,8 +276,28 @@ if( $MacAddressByte -eq $null ){
 $ByteData = CreateMagicPacketData $MacAddressByte
 
 # ブロードキャストアドレスを得る
-$BroadcastAddress = CalcBroadcastAddressv4 $NetworkAddress
+$BroadcastAddress = CalcBroadcastAddressv4 $NetworkAddress $SubnetMask
 
 # マジックパケットを送信する
-SendPacket $BroadcastAddress $ByteData 7
+[array]$Result = SendPacket $BroadcastAddress $ByteData $Port
+$Status = $Result[$Result.count -1]
+if( $Status -eq $false ){
+	$Message = "[FAIL] WOL packet send fail."
+	if( -not $NoLog ){
+		Log $Message
+	}
+	else{
+		echo $Message
+	}
+	exit
+}
+
+if( -not $NoLog ){
+	Log "[INFO] Sended WOL Packet."
+	Log "[INFO]     Broadcast Address  : $BroadcastAddress"
+	Log "[INFO]     UDP port number    : $Port"
+	Log "[INFO]     Terget MAC Address : $MacAddress"
+	# ログ表示抑制しつつログ記録
+	$Dummy = Log "[INFO] ========== End =========="
+}
 
