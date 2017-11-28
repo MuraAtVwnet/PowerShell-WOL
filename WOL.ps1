@@ -2,7 +2,7 @@
 # マジックパケット送信
 ########################################################
 param(
-	$MacAddress,		# マジックパケットの送り先( - or : or space セパレート)
+	[array]$MacAddress,	# マジックパケットの送り先( - or : or space セパレート)
 	$NetworkAddress,	# ネットワークアドレス(CIDR形式)
 	$SubnetMask,		# サブネットマスク
 	$Port = 7,			# UDP のポート番号
@@ -232,11 +232,11 @@ function SendPacket( $BroadcastAddress, $ByteData, $Port ){
 function Usage(){
 	echo ""
 	echo "Usage..."
-	echo "    WOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address"
+	echo "    WOL.ps1 -MacAddress Terget Mac Address -NetworkAddress Terget Network Address(s)"
 	echo ""
 	echo "    Options:"
 	echo "        -MacAddress"
-	echo "            Terget MAC Address( `"-`" or `":`" )"
+	echo "            Terget MAC Address(s) ( `"-`" or `":`" )"
 	echo ""
 	echo "        -NetworkAddress"
 	echo "            Terget Network/CIDR"
@@ -255,6 +255,9 @@ function Usage(){
 	echo "        WOL.ps1 02-15-90-CA-0F-2A 192.168.0.15 255.255.255.0"
 	echo "        WOL.ps1 -NetworkAddress 192.168.0.15/24 -MacAddress 02-15-90-CA-0F-2A -NoLog"
 	echo ""
+	echo '        $MacAddresses = "02-15-90-CA-0F-2A", "02-15-90-CA-0F-2B"'
+	echo '        WOL.ps1 $MacAddresses 192.168.0.15/24'
+	echo ""
 }
 
 
@@ -271,44 +274,50 @@ if( -not $NoLog ){
 	$Dummy = Log "[INFO] ========= Start ========="
 }
 
-# MAC アドレス文字列を byte データにする
-$MacAddressByte = ConvertMacAddressString2ByteData $MacAddress
-if( $MacAddressByte -eq $null ){
-	$Message = "[FAIL] Bad MAC Address. $MacAddress"
-	if( -not $NoLog ){
-		Log $Message
-	}
-	else{
-		echo $Message
-	}
-	exit
-}
-
-# マジックパケットデータを作成する
-$ByteData = CreateMagicPacketData $MacAddressByte
-
 # ブロードキャストアドレスを得る
 $BroadcastAddress = CalcBroadcastAddressv4 $NetworkAddress $SubnetMask
 
-# マジックパケットを送信する
-[array]$Result = SendPacket $BroadcastAddress $ByteData $Port
-$Status = $Result[$Result.count -1]
-if( $Status -eq $false ){
-	$Message = "[FAIL] WOL packet send fail."
+foreach($TergetMacAddress in $MacAddress){
+
+	# MAC アドレス文字列を byte データにする
+	$MacAddressByte = ConvertMacAddressString2ByteData $TergetMacAddress
+	if( $MacAddressByte -eq $null ){
+		$Message = "[FAIL] Bad MAC Address. $TergetMacAddress"
+		if( -not $NoLog ){
+			Log $Message
+		}
+		else{
+			echo $Message
+		}
+		exit
+	}
+
+	# マジックパケットデータを作成する
+	$ByteData = CreateMagicPacketData $MacAddressByte
+
+	# マジックパケットを送信する
+	[array]$Result = SendPacket $BroadcastAddress $ByteData $Port
+	$Status = $Result[$Result.count -1]
+	if( $Status -eq $false ){
+		$Message = "[FAIL] WOL packet send fail."
+		if( -not $NoLog ){
+			Log $Message
+		}
+		else{
+			echo $Message
+		}
+		exit
+	}
+
 	if( -not $NoLog ){
-		Log $Message
+		Log "[INFO] Sended Magic Packet."
+		Log "[INFO]     Broadcast Address  : $BroadcastAddress"
+		Log "[INFO]     UDP port number    : $Port"
+		Log "[INFO]     Terget MAC Address : $TergetMacAddress"
 	}
-	else{
-		echo $Message
-	}
-	exit
 }
 
 if( -not $NoLog ){
-	Log "[INFO] Sended Magic Packet."
-	Log "[INFO]     Broadcast Address  : $BroadcastAddress"
-	Log "[INFO]     UDP port number    : $Port"
-	Log "[INFO]     Terget MAC Address : $MacAddress"
 	# ログ表示抑制しつつログ記録
 	$Dummy = Log "[INFO] ========== End =========="
 }
