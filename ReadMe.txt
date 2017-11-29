@@ -28,3 +28,7 @@ Usage...
 
         $MacAddresses = "02-15-90-CA-0F-2A", "02-15-90-CA-0F-2B"
         .\WOL.ps1 $MacAddresses 192.168.0.15/24
+
+Web page
+    PowerShell WOL
+    http://www.vwnet.jp/Windows/PowerShell/2017112801/PowerShellWOL.htm
