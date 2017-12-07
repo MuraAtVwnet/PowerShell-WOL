@@ -115,6 +115,11 @@ function CalcBroadcastAddressv4( $IP, $Subnet ){
 
 	# CIDR の時は サブネットマスクに変換する
 	if( $Subnet -eq $null ){
+		if( -not $IP.Contains("/") ){
+			# IP そのものが指定されているのでそのまま IP を返す
+			return $IP
+		}
+
 		$Temp = $IP -split "/"
 		$IP = $Temp[0]
 		$CIDR = $Temp[1]
